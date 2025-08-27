@@ -16,6 +16,7 @@ x-common: &ros_common
     NVIDIA_DRIVER_CAPABILITIES: "all,graphics,utility,compute"
   volumes:
     - ./catkin_ws/src:/home/ubuntu/catkin_ws/src
+    - ./scripts/:/home/ubuntu/scripts
     - /tmp/.X11-unix:/tmp/.X11-unix
     - /home/${USER}/.Xauthority:/tmp/.XAuthorityHost:ro
     - /home/${USER}/.Xauthority:/tmp/.X11Auth:ro
@@ -37,3 +38,4 @@ services:
     command: [ "ros2", "launch", "sick_picocam2_bridge", "multicam.launch.py" ]
     volumes:
       - ./catkin_ws/src:/home/ubuntu/catkin_ws/src
+      - ./scripts/:/home/ubuntu/scripts
