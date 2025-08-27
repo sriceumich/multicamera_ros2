@@ -1,0 +1,16 @@
+sick_picocam2_multicam:
+  ros__parameters:
+    use_ptp: false
+    use_gstreamer: true
+    topic_prefix: "/cameras"
+    latency_ms: 50
+    hardware_accel: "nvidia"
+    width: 1280
+    height: 720
+    fps: 30
+    encoding: "bgr8"
+    drop_old_frames: true
+    stats_interval: 5.0
+    streams:
+      - "aravis:SICK-I2D303C-2RCA11-0025310004"
+      - "aravis:SICK-I2D303C-2RCA11-0025310021"

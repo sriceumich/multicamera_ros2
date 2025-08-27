@@ -1,0 +1,21 @@
+<dds>
+  <Domain id="0">
+    <General>
+      <ReaderHistoryMemoryPolicy>PREALLOCATED_WITH_REALLOC</ReaderHistoryMemoryPolicy>
+      <WriterHistoryMemoryPolicy>PREALLOCATED_WITH_REALLOC</WriterHistoryMemoryPolicy>
+    </General>
+    <Participant>
+      <Discovery>
+        <Peers>
+          <Peer address="10.5.5.25"/>
+        </Peers>
+      </Discovery>
+    </Participant>
+    <Publisher>
+      <ThroughputController>
+        <MaxBytesPerPeriod>1048576</MaxBytesPerPeriod>
+        <Period>0.001</Period>
+      </ThroughputController>
+    </Publisher>
+  </Domain>
+</dds>

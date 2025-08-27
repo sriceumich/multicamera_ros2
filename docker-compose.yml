@@ -1,0 +1,39 @@
+x-common: &ros_common
+  runtime: nvidia
+  network_mode: host
+  ipc: host
+  privileged: true
+  restart: unless-stopped
+  user: "${UID}:${GID}"
+  environment:
+    DISPLAY: "${DISPLAY}"
+    XAUTHORITY: "/tmp/.Xauthority"
+    QT_X11_NO_MITSHM: "1"
+    QT_AUTO_SCREEN_SCALE_FACTOR: "0"
+    QT_SCREEN_SCALE_FACTORS: "1"
+    QT_SCALE_FACTOR: "1"
+    NVIDIA_VISIBLE_DEVICES: "all"
+    NVIDIA_DRIVER_CAPABILITIES: "all,graphics,utility,compute"
+  volumes:
+    - ./catkin_ws/src:/home/ubuntu/catkin_ws/src
+    - /tmp/.X11-unix:/tmp/.X11-unix
+    - /home/${USER}/.Xauthority:/tmp/.XAuthorityHost:ro
+    - /home/${USER}/.Xauthority:/tmp/.X11Auth:ro
+    - /home/${USER}/.Xauthority:/tmp/.Xauthority:rw
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - capabilities: ["gpu"]
+
+services:
+  base:
+    <<: *ros_common
+    container_name: ros_base24
+    image: ros_base24   # final name of built base image
+    build:
+      context: ./            # project root with Dockerfile
+      dockerfile: ./docker/base/Dockerfile
+    command: [ "ros2", "launch", "sick_picocam2_bridge", "multicam.launch.py" ]
+    volumes:
+      - ./catkin_ws/src:/home/ubuntu/catkin_ws/src

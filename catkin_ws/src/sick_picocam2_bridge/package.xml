@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>sick_picocam2_bridge</name>
+  <version>0.1.0</version>
+  <description>ROS 2 bridge for SICK PICOcam2 publishing one topic per camera</description>
+  <maintainer email="you@example.com">You</maintainer>
+  <license>MIT</license>
+
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>vision_msgs</exec_depend>
+  <exec_depend>image_transport</exec_depend>
+  <exec_depend>camera_info_manager</exec_depend>
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+  
+  <!-- You’ll need OpenCV + optional GStreamer/aravis installed on the system -->
+</package>
