@@ -7,7 +7,7 @@ sick_picocam2_multicam:
     hardware_accel: "nvidia"
     width: 1280
     height: 720
-    fps: 30
+    fps: 10
     encoding: "bgr8"
     drop_old_frames: true
     stats_interval: 5.0
