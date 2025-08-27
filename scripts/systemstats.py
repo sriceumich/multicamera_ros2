@@ -30,15 +30,20 @@ def draw_dashboard(stdscr):
             if y < max_y and x < max_x:
                 stdscr.addstr(y, x, text[: max_x - x])
 
-        # CPU usage
+        # CPU usage (horizontal layout)
         cpu_percents = psutil.cpu_percent(percpu=True)
         safe_addstr(0, 0, "CPU Usage per Core:")
+
+        col_width = 15  # width reserved per core entry
+        cols = max_x // col_width
         for i, p in enumerate(cpu_percents):
-            safe_addstr(1 + i, 2, f"Core {i}: {p:5.1f}%")
+            row = 1 + (i // cols)
+            col = (i % cols) * col_width
+            safe_addstr(row, col, f"Core {i:2d}: {p:5.1f}%")
 
         # Memory usage
+        line = 2 + (len(cpu_percents) + cols - 1) // cols
         mem = psutil.virtual_memory()
-        line = len(cpu_percents) + 2
         safe_addstr(line, 0, "Memory Usage:")
         safe_addstr(line + 1, 2,
             f"Used: {mem.used/1024/1024:.1f} MB / {mem.total/1024/1024:.1f} MB ({mem.percent}%)")
@@ -70,12 +75,12 @@ def draw_dashboard(stdscr):
 
         stdscr.refresh()
 
-        # Press 'q' to quit
         try:
             if stdscr.getkey() == "q":
                 break
         except:
             pass
+
 
 def main():
     curses.wrapper(draw_dashboard)
