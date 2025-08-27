@@ -2,7 +2,8 @@ import gi, time
 gi.require_version('Gst', '1.0')
 gi.require_version('GstApp', '1.0')
 from gi.repository import Gst, GstApp
-
+import psutil
+import os
 import threading
 import rclpy
 from rclpy.node import Node
@@ -13,12 +14,13 @@ from std_msgs.msg import Header
 Gst.init(None)
 
 class AppsinkWorker(threading.Thread):
-    def __init__(self, node, topic_ns, frame_id, pipeline_str, stats_interval=5.0):
+    def __init__(self, node, topic_ns, frame_id, pipeline_str, stats_interval=5.0, cpu_core=None):
         super().__init__(daemon=True)
         self.node = node
         self.topic_ns = topic_ns
         self.frame_id = frame_id
         self.stats_interval = stats_interval
+        self.cpu_core = cpu_core 
 
         qos = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -102,6 +104,17 @@ class AppsinkWorker(threading.Thread):
         return Gst.FlowReturn.OK
 
     def run(self):
+        # Pin this thread to a CPU core (Linux only)
+        if self.cpu_core is not None:
+            try:
+                p = psutil.Process(os.getpid())
+                p.cpu_affinity([self.cpu_core])
+                self.node.get_logger().info(
+                    f"[{self.topic_ns}] pinned to CPU core {self.cpu_core}"
+                )
+            except Exception as e:
+                self.node.get_logger().warn(f"CPU pinning failed: {e}")
+
         self.node.get_logger().info(f"[{self.topic_ns}] starting pipeline")
         self.pipeline.set_state(Gst.State.PLAYING)
         bus = self.pipeline.get_bus()

@@ -3,7 +3,7 @@
   <name>sick_picocam2_bridge</name>
   <version>0.1.0</version>
   <description>ROS 2 bridge for SICK PICOcam2 publishing one topic per camera</description>
-  <maintainer email="you@example.com">You</maintainer>
+  <maintainer email="seanrice@umich.com">Sean Rice</maintainer>
   <license>MIT</license>
 
 

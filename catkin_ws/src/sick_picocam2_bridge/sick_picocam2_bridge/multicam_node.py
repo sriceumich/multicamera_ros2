@@ -16,6 +16,7 @@ Gst.init(None)
 from .AppsinkWorker import AppsinkWorker
 
 import re
+
 import socket
 import time
 from typing import List, Optional, Tuple
@@ -567,6 +568,9 @@ class MultiRtspCamNode(Node):
                     height=(height or None),
                     fps=fps
                 )
+            # Assign each worker to a CPU core (wraparound if more cameras than cores)
+            core_count = os.cpu_count()
+            core = i % core_count
 
             w = AppsinkWorker(
                 node=self,
@@ -574,6 +578,7 @@ class MultiRtspCamNode(Node):
                 frame_id=safe_name,
                 pipeline_str=pipe,
                 stats_interval=stats_interval,
+                cpu_core=core
             )
             self.workers.append(w)
 
