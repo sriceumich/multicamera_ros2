@@ -108,7 +108,7 @@ flowchart LR
     style IMG fill:#afa,stroke:#333,stroke-width:1px
     style INFO fill:#afa,stroke:#333,stroke-width:1px
 
-
+```
 ---
 
 ## 🔧 Installation
