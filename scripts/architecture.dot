@@ -1,0 +1,17 @@
+digraph G {
+    rankdir=LR;
+    node [shape=box, style=rounded, fontname="Helvetica"];
+    
+    Camera [label="GigE / RTSP Cameras"];
+    GStreamer [label="GStreamer Pipeline"];
+    AppsinkWorker [label="AppsinkWorker (Python GObject)"];
+    ROS2Node [label="ROS2 Node (rclpy)"];
+    ImageTopic [label="/cameras/*/image_raw"];
+    CameraInfoTopic [label="/cameras/*/camera_info"];
+
+    Camera -> GStreamer;
+    GStreamer -> AppsinkWorker;
+    AppsinkWorker -> ROS2Node;
+    ROS2Node -> ImageTopic;
+    ROS2Node -> CameraInfoTopic;
+}
