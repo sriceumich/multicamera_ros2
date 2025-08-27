@@ -24,21 +24,25 @@ def draw_dashboard(stdscr):
 
     while True:
         stdscr.erase()
+        max_y, max_x = stdscr.getmaxyx()
+
+        def safe_addstr(y, x, text):
+            if y < max_y and x < max_x:
+                stdscr.addstr(y, x, text[: max_x - x])
 
         # CPU usage
         cpu_percents = psutil.cpu_percent(percpu=True)
-        stdscr.addstr(0, 0, "CPU Usage per Core:")
+        safe_addstr(0, 0, "CPU Usage per Core:")
         for i, p in enumerate(cpu_percents):
-            stdscr.addstr(1 + i, 2, f"Core {i}: {p:5.1f}%")
+            safe_addstr(1 + i, 2, f"Core {i}: {p:5.1f}%")
 
         # Memory usage
         mem = psutil.virtual_memory()
         line = len(cpu_percents) + 2
-        stdscr.addstr(line, 0, "Memory Usage:")
-        stdscr.addstr(line + 1, 2,
-            f"Used: {mem.used/1024/1024:.1f} MB / {mem.total/1024/1024:.1f} MB "
-            f"({mem.percent}%)")
-        stdscr.addstr(line + 2, 2,
+        safe_addstr(line, 0, "Memory Usage:")
+        safe_addstr(line + 1, 2,
+            f"Used: {mem.used/1024/1024:.1f} MB / {mem.total/1024/1024:.1f} MB ({mem.percent}%)")
+        safe_addstr(line + 2, 2,
             f"Available: {mem.available/1024/1024:.1f} MB | "
             f"Buffers: {getattr(mem, 'buffers', 0)/1024/1024:.1f} MB | "
             f"Cache: {getattr(mem, 'cached', 0)/1024/1024:.1f} MB")
@@ -46,22 +50,23 @@ def draw_dashboard(stdscr):
         # Network usage
         net_usage = get_network_usage(0.5)
         line += 4
-        stdscr.addstr(line, 0, "Network Usage (KB/s):")
+        safe_addstr(line, 0, "Network Usage (KB/s):")
         for j, (iface, (rx, tx)) in enumerate(net_usage.items()):
-            stdscr.addstr(line + 1 + j, 2, f"{iface:10s} RX: {rx:8.1f} KB/s | TX: {tx:8.1f} KB/s")
+            safe_addstr(line + 1 + j, 2,
+                f"{iface:10s} RX: {rx:8.1f} KB/s | TX: {tx:8.1f} KB/s")
 
         # GPU usage
         gpus = GPUtil.getGPUs()
         line += len(net_usage) + 2
         if gpus:
-            stdscr.addstr(line, 0, "NVIDIA GPUs:")
+            safe_addstr(line, 0, "NVIDIA GPUs:")
             for k, gpu in enumerate(gpus):
-                stdscr.addstr(line + 1 + k, 2,
+                safe_addstr(line + 1 + k, 2,
                     f"{gpu.name} | Load: {gpu.load*100:5.1f}% | "
                     f"Mem: {gpu.memoryUsed:.0f}MB / {gpu.memoryTotal:.0f}MB | "
                     f"Temp: {gpu.temperature}°C")
         else:
-            stdscr.addstr(line, 0, "No NVIDIA GPUs found")
+            safe_addstr(line, 0, "No NVIDIA GPUs found")
 
         stdscr.refresh()
 
