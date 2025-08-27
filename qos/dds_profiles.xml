@@ -7,7 +7,7 @@
     <Participant>
       <Discovery>
         <Peers>
-          <Peer address="10.5.5.25"/>
+          <Peer address="10.5.5.28"/>
         </Peers>
       </Discovery>
     </Participant>

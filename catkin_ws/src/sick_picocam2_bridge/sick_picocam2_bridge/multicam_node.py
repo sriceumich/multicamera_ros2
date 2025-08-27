@@ -41,7 +41,7 @@ except ImportError:
 
 # ---------------------- helpers: naming & rtsp probing ----------------------
 
-def sanitize_name(name: str) -> str:
+def sanitize_name(name: str,logger=None) -> str:
     """
     Make a ROS topic/TF-friendly name:
     - lowercase
@@ -55,7 +55,7 @@ def sanitize_name(name: str) -> str:
         name = f"cam_{name}" if name else "cam"
     return name
 
-def fix_scheme(uri: str) -> str:
+def fix_scheme(uri: str,logger=None) -> str:
     """
     Normalize common RTSP scheme typos:
     - 'rtsp:/host'      -> 'rtsp://host'
@@ -83,7 +83,7 @@ def fix_scheme(uri: str) -> str:
 
     return u
 
-def _read_exact(sock: socket.socket, n: int, timeout: float) -> bytes:
+def _read_exact(sock: socket.socket, n: int, timeout: float,logger=None) -> bytes:
     sock.settimeout(timeout)
     chunks = []
     remaining = n
@@ -95,7 +95,7 @@ def _read_exact(sock: socket.socket, n: int, timeout: float) -> bytes:
         remaining -= len(b)
     return b"".join(chunks)
 
-def gst_rtsp_appsink(uri: str, latency_ms=50, hw=None, width=None, height=None, fps=10):
+def gst_rtsp_appsink(uri: str, latency_ms=50, hw=None, width=None, height=None, fps=10,logger=None):
     dec = "nvh264dec" if hw == "nvidia" else "avdec_h264"
     caps_parts = []
     if width and height:
@@ -114,7 +114,7 @@ def gst_rtsp_appsink(uri: str, latency_ms=50, hw=None, width=None, height=None, 
     )
 
 def gst_aravis_appsink(device: str, width=None, height=None, fps=10,
-                       packet_size=8192, packet_delay_ns=1000):
+                       packet_size=8192, packet_delay_ns=1000,logger=None):
     caps_parts = []
     if width and height:
         caps_parts.append(f"width={width},height={height}")
@@ -124,12 +124,12 @@ def gst_aravis_appsink(device: str, width=None, height=None, fps=10,
 
     return (
         f"aravissrc camera-name={device} packet-size={packet_size} ! "
-        f"capsfilter caps=video/x-raw,{caps if caps else 'format=BGR'} ! "
-        "videoconvert ! video/x-raw,format=BGR ! "
+        f"capsfilter caps=video/x-bayer,format=rggb,{caps} ! "
+        "bayer2rgb ! videoconvert ! video/x-raw,format=BGR ! "
         "appsink name=appsink0 emit-signals=true sync=false max-buffers=1 drop=true"
     )
 
-def probe_rtsp_name(uri: str, timeout: float = 2.0) -> Optional[str]:
+def probe_rtsp_name(uri: str, logger=None, timeout: float = 2.0,) -> Optional[str]:
     """
     Minimal RTSP DESCRIBE to fetch SDP and extract 's=' session name.
     Returns None on any failure.
@@ -202,7 +202,7 @@ def probe_rtsp_name(uri: str, timeout: float = 2.0) -> Optional[str]:
     except Exception:
         return None
 
-def name_from_uri(uri: str) -> str:
+def name_from_uri(uri: str,logger=None) -> str:
     """Fallback name: last path segment or full host-port if no path."""
     uri = fix_scheme(uri)
     parsed = urlparse(uri)
@@ -213,19 +213,20 @@ def name_from_uri(uri: str) -> str:
     port = parsed.port
     return f"{host}_{port}" if port else host
 
-def is_aravis_uri(u: str) -> bool:
+def is_aravis_uri(u: str,logger=None) -> bool:
     u = u.strip()
     return u.lower().startswith(("aravis:", "gige:", "mac:"))
 
 def open_capture_from_uri(uri: str, use_gst: bool, latency_ms: int,
                           hwaccel: Optional[str], width: Optional[int],
-                          height: Optional[int], fps: Optional[int]):
+                          height: Optional[int], fps: Optional[int],logger=None):
     flags = backend_flags(use_gst)
     if is_aravis_uri(uri):
         # Strip scheme if present to feed camera-name=…
         device = uri.split(":", 1)[1] if ":" in uri else uri
         pipe = build_aravis_pipeline(device=device, width=width, height=height, fps=fps)
         return cv2.VideoCapture(pipe, cv2.CAP_GSTREAMER)
+
     # otherwise fall back to RTSP/H264
     pipe = build_gst_pipeline(uri, latency_ms, hwaccel, width, height, fps) if use_gst else uri
     return cv2.VideoCapture(pipe, flags)
@@ -234,8 +235,9 @@ def build_aravis_pipeline(device: str,
                           width: Optional[int] = None,
                           height: Optional[int] = None,
                           fps: Optional[int] = None,
-                          to_bgr: bool = True,
-                          packet_size: int = 9000) -> str:
+                          to_bgr: bool = False,
+                          packet_size: int = 9000,
+                          logger=None) -> str:
     """
     device can be:
       - 'GigE:192.168.0.102'
@@ -243,38 +245,38 @@ def build_aravis_pipeline(device: str,
       - the camera name shown by `arv-tool-0.8`
     Requires gstreamer + aravis plugins installed.
     """
+
     caps = []
     if width and height:
         caps.append(f"width={width},height={height}")
     if fps:
         caps.append(f"framerate={fps}/1")
-    caps_str = ""
-    if caps:
-        caps_str = " ! video/x-raw," + ",".join(caps)
 
-    convert = "videoconvert ! video/x-raw,format=BGR" if to_bgr else "videoconvert"
+
+    convert = "bayer2rgb ! videoconvert ! video/x-raw,format=BGR" if to_bgr else "bayer2rgb ! videoconvert"
 
     # Drop/sync=false keeps latency small; tune packet-timeout if needed.
     # You can also set e.g. exposure via 'camera-gv-feature=value' style properties (advanced).
     pipeline = (
         f"aravissrc camera-name={device} packet-size=8192 ! "
-        f"video/x-raw{caps_str},width={width},height={height}  ! {convert} ! {caps} !"
+        f"video/x-raw,width={width},height={height}  ! {convert} ! {caps} !"
         "appsink emit-signals=false sync=false max-buffers=1 drop=true"
     )
     return pipeline
-
 
 def build_gst_pipeline(uri: str, latency_ms: int = 50,
                        hw: Optional[str] = None,
                        width: Optional[int] = None,
                        height: Optional[int] = None,
-                       fps: Optional[int] = None) -> str:
+                       fps: Optional[int] = None,
+                       logger=None) -> str:
+
     if hw == "nvidia":
         decoder = "nvh264dec"
-        convert = "videoconvert ! video/x-raw,format=BGR"
+        convert = "nvv4l2decoder mjpeg=1 ! nvvidconv ! video/x-raw, format=BGRx ! videoconvert ! video/x-raw, format=BGR !"
     else:
         decoder = "avdec_h264"
-        convert = "videoconvert"
+        convert = "videoconvert ! bayer2rgb"
 
     caps = []
     if width and height:
@@ -283,7 +285,7 @@ def build_gst_pipeline(uri: str, latency_ms: int = 50,
         caps.append(f"framerate={fps}/1")
 
     pipeline = (
-        f"aravissrc location={uri} protocols=tcp latency={latency_ms} ! "
+        f"aravissrc location={uri} protocols=tcp latency={latency_ms} camera-gv-feature=PixelFormat=RGB8 ! "
         "application/x-rtp,media=video,encoding-name=H264 ! {caps} !"
         "rtph264depay ! h264parse ! "
         f"{decoder} ! {convert} ! "
@@ -291,7 +293,7 @@ def build_gst_pipeline(uri: str, latency_ms: int = 50,
     )
     return pipeline
 
-def backend_flags(use_gst: bool) -> int:
+def backend_flags(use_gst: bool,logger=None) -> int:
     if use_gst:
         return cv2.CAP_GSTREAMER
     return cv2.CAP_FFMPEG if hasattr(cv2, "CAP_FFMPEG") else 0
@@ -316,6 +318,8 @@ class CameraWorker(threading.Thread):
                  frame_id: Optional[str] = None):
         super().__init__(daemon=True)
         self.node = node
+        self.node.get_logger().set_level(rclpy.logging.LoggingSeverity.DEBUG)
+        self.node.set_level(rclpy.logging.LoggingSeverity.DEBUG)
         self.index = index
         self.uri = uri
         self.topic_ns = topic_ns
@@ -358,11 +362,11 @@ class CameraWorker(threading.Thread):
     def _open_capture(self):
         if is_aravis_uri(self.uri):
             device = self.uri.split(":", 1)[1] if ":" in self.uri else self.uri
-            pipe = build_aravis_pipeline(device=device, width=self.width, height=self.height, fps=fps)
+            pipe = build_aravis_pipeline(device=device, width=self.width, height=self.height, fps=fps,logger=self.node.get_logger())
             self.node.get_logger().info(f"[{self.topic_ns}] Aravis pipeline: {pipe}")
             self.cap = cv2.VideoCapture(pipe, cv2.CAP_GSTREAMER)
         elif self.use_gst:
-            pipe = build_gst_pipeline(self.uri, self.latency_ms, self.hwaccel, self.width, self.height, self.fps)
+            pipe = build_gst_pipeline(self.uri, self.latency_ms, self.hwaccel, self.width, self.height, self.fps,logger=self.node.get_logger())
             self.node.get_logger().info(f"[{self.topic_ns}] GStreamer RTSP pipeline: {pipe}")
             self.cap = cv2.VideoCapture(pipe, cv2.CAP_GSTREAMER)
         else:
@@ -526,22 +530,23 @@ class MultiRtspCamNode(Node):
         use_ptp: bool = bool(self.get_parameter("use_ptp").value)        
 
         # Normalize URIs (fix schemes) up front
-        streams = [fix_scheme(u) for u in streams]
+        streams = [fix_scheme(u,self.get_logger()) for u in streams]
 
         if not streams:
             self.get_logger().error("No RTSP streams provided. Set the 'streams' parameter to a list of URIs.")
             raise SystemExit(2)
-        if len(streams) > 32:
-            self.get_logger().warn(f"Requested {len(streams)} streams.")
 
+        self.get_logger().warn(f"Requested {len(streams)} streams.")
+
+        logger=self.get_logger()
         # Probe names
         discovered = []
         for i, uri in enumerate(streams):
-            cam_name = probe_rtsp_name(uri, timeout=2.0)
+            cam_name = probe_rtsp_name(uri, self.get_logger(), timeout=2.0  )
             if not cam_name:
                 # fallback to last segment token
-                cam_name = name_from_uri(uri)
-            safe_name = sanitize_name(cam_name)
+                cam_name = name_from_uri(uri, self.get_logger())
+            safe_name = sanitize_name(cam_name, logger=logger )
             ns = f"{topic_prefix}/{safe_name}"
             self.get_logger().info(f"Camera[{i}] uri={uri} -> name='{cam_name}' -> ns='{ns}'")
             discovered.append((uri, ns, safe_name))
@@ -557,7 +562,8 @@ class MultiRtspCamNode(Node):
                     height=(height or None),
                     fps=fps,
                     packet_size=8192,          # tune with your MTU (use 8192 with MTU=9000)
-                    packet_delay_ns=2000       # stagger if multiple cameras share a NIC
+                    packet_delay_ns=2000,
+                    logger=logger     # stagger if multiple cameras share a NIC
                 )
             else:
                 pipe = gst_rtsp_appsink(
@@ -566,11 +572,14 @@ class MultiRtspCamNode(Node):
                     hw=hwaccel,
                     width=(width or None),
                     height=(height or None),
-                    fps=fps
+                    fps=fps,
+                    logger=logger 
                 )
+
             # Assign each worker to a CPU core (wraparound if more cameras than cores)
             core_count = os.cpu_count()
             core = i % core_count
+            self.get_logger().info(f"Camera[{i}] pipe={pipe}")
 
             w = AppsinkWorker(
                 node=self,

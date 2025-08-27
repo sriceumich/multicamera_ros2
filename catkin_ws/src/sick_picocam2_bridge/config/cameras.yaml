@@ -12,5 +12,5 @@ sick_picocam2_multicam:
     drop_old_frames: true
     stats_interval: 5.0
     streams:
-      - "aravis:SICK-I2D303C-2RCA11-0025310004"
-      - "aravis:SICK-I2D303C-2RCA11-0025310021"
+      - "aravis:SICK-I2D303C-2RCA11-0025310006"
+      - "aravis:SICK-I2D303C-2RCA11-0025310024"
