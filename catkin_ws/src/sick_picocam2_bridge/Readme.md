@@ -26,7 +26,7 @@
 
 
 **Author/Maintainer:** Sean Rice ([seanrice@umich.edu](mailto:seanrice@umich.edu))  
-**License:** MIT  
+**License:** Creative Commons Attribution–NonCommercial 4.0 International (CC BY-NC 4.0)  
 **Version:** 0.1.0  
 
 This repository provides a **ROS 2 bridge for SICK PICOcam2 GigE Vision cameras**, enabling seamless integration of multi-camera video pipelines into ROS2 ecosystems. It supports **GStreamer** and **Aravis** backends, publishing image streams and camera info topics optimized for **low-latency, high-throughput robotics applications**.

@@ -24,7 +24,7 @@
 ![Maintained](https://img.shields.io/badge/Maintained-Yes-success)  
 
 **Author/Maintainer:** Sean Rice ([seanrice@umich.edu](mailto:seanrice@umich.edu))  
-**License:** MIT  
+**License:** Creative Commons Attribution–NonCommercial 4.0 International (CC BY-NC 4.0)  
 **Version:** 0.1.0  
 
 This package provides a **web-based monitoring dashboard** for multi-camera and LiDAR ROS2 streams. It combines **FastAPI**, **WebSockets**, and **Three.js** for live visualization of camera feeds, annotated detections, DINOV3 embeddings, and LiDAR point clouds with IMU orientation.
