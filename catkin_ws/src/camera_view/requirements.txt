@@ -1,0 +1,6 @@
+numpy<2,>=1.23
+fastapi
+
+uvicorn
+websockets
+transforms3d

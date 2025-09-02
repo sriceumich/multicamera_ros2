@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>camera_view</name>
+  <version>0.0.1</version>
+  <description>ROS2 Web viewer for camera, annotated streams and lidar</description>
+
+  <maintainer email="thevisad@gmail.com">Your Name</maintainer>
+  <license>Commercial License</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>vision_msgs</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>multi_rtsp_cam_pkg</exec_depend>
+  <depend>camera_msgs</depend>
+  <!-- For the web server -->
+  <exec_depend>fastapi</exec_depend>
+  <exec_depend>uvicorn</exec_depend>
+  <exec_depend>opencv-python</exec_depend>
+  <exec_depend>numpy</exec_depend>
+  <exec_depend>pyyaml</exec_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

@@ -1,0 +1,3 @@
+graft camera_view/static
+graft camera_view/ssl
+global-exclude __pycache__ *.py[cod] .DS_Store

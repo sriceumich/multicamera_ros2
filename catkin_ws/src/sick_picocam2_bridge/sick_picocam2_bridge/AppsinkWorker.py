@@ -104,17 +104,6 @@ class AppsinkWorker(threading.Thread):
         return Gst.FlowReturn.OK
 
     def run(self):
-        # Pin this thread to a CPU core (Linux only)
-        if self.cpu_core is not None:
-            try:
-                p = psutil.Process(os.getpid())
-                p.cpu_affinity([self.cpu_core])
-                self.node.get_logger().info(
-                    f"[{self.topic_ns}] pinned to CPU core {self.cpu_core}"
-                )
-            except Exception as e:
-                self.node.get_logger().warn(f"CPU pinning failed: {e}")
-
         self.node.get_logger().info(f"[{self.topic_ns}] starting pipeline")
         self.pipeline.set_state(Gst.State.PLAYING)
         bus = self.pipeline.get_bus()

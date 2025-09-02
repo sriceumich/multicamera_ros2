@@ -39,3 +39,35 @@ services:
     volumes:
       - ./catkin_ws/src:/home/ubuntu/catkin_ws/src
       - ./scripts/:/home/ubuntu/scripts
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 60s
+      timeout: 5s
+      retries: 1
+      start_period: 60s   # <- container considered "healthy" only after 30s
+
+
+  camera_view:
+    <<: *ros_common
+    image: wildlife-camera
+    container_name: camera_view
+    gpus: all
+    depends_on:
+      base:
+        condition: service_healthy
+    environment:
+      DISPLAY: "${DISPLAY}"
+      XAUTHORITY: "/tmp/.Xauthority"
+      QT_AUTO_SCREEN_SCALE_FACTOR: "0"
+      QT_SCREEN_SCALE_FACTORS: "1"
+      QT_SCALE_FACTOR: "1"
+      NVIDIA_VISIBLE_DEVICES: "all"
+      NVIDIA_DRIVER_CAPABILITIES: "all"
+      RECORD_ROOT: "/home/ubuntu/data/recordings"
+    volumes:
+      - ./catkin_ws/src/camera_view/ssl/key.pem:/home/ubuntu/catkin_ws/install/lib/python3.12/site-packages/camera_view/ssl/key.pem:ro
+      - /home/thevisad/wildlife_camera_ros2/catkin_ws/src:/home/ubuntu/catkin_ws/src
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /home/thevisad/.Xauthority:/tmp/.Xauthority:rw
+      - ./data/recordings:/home/ubuntu/data/recordings
+    command: [ "ros2","launch","camera_view","webstream_launch.py" ]
