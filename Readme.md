@@ -1,17 +1,14 @@
-# SICK PICOcam2 ROS2 Bridge
-
+# Multi-Camera ROS2 Ecosystem
 
 ---
 
 ## Table of Contents
 - [Overview](#overview)
-- [Features](#features)
+- [Modules](#modules)
 - [Architecture](#architecture)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Docker Support](#docker-support)
-- [Scripts](#scripts)
-- [ROS2 Integration](#ros2-integration)
 - [Monitoring](#monitoring)
 - [Development](#development)
 - [License](#license)
@@ -19,207 +16,139 @@
 
 ---
 
-![ROS2](https://img.shields.io/badge/ROS2-Humble-blue)
-![Docker](https://img.shields.io/badge/Docker-Ready-green)
-![License](https://img.shields.io/badge/License-MIT-yellow)
-![Maintained](https://img.shields.io/badge/Maintained-Yes-success)
-
+![ROS2](https://img.shields.io/badge/ROS2-Humble-blue)  
+![Docker](https://img.shields.io/badge/Docker-Ready-green)  
+![FastAPI](https://img.shields.io/badge/FastAPI-Integrated-green)  
+![Three.js](https://img.shields.io/badge/Three.js-WebGPU/WebGL-purple)  
+![License](https://img.shields.io/badge/License-MIT-yellow)  
+![Maintained](https://img.shields.io/badge/Maintained-Yes-success)  
 
 **Author/Maintainer:** Sean Rice ([seanrice@umich.edu](mailto:seanrice@umich.edu))  
 **License:** MIT  
 **Version:** 0.1.0  
 
-This repository provides a **ROS 2 bridge for SICK PICOcam2 GigE Vision cameras**, enabling seamless integration of multi-camera video pipelines into ROS2 ecosystems. It supports **GStreamer** and **Aravis** backends, publishing image streams and camera info topics optimized for **low-latency, high-throughput robotics applications**.
+This repository provides a **modular multi-camera + LiDAR ROS2 ecosystem**, designed for **low-latency, high-throughput robotics applications**. It includes:
 
-The project is designed to be **modular, containerized, and reproducible** using Docker, with support for **GPU acceleration** (NVIDIA NVDEC) and advanced camera synchronization features such as **Precision Time Protocol (PTP)**.
+- A **ROS2 bridge** for **SICK PICOcam2 GigE Vision cameras**, optimized with GStreamer pipelines and ROS2 QoS profiles.  
+- A **web-based dashboard** (`camera_view`) built on **FastAPI + Three.js**, enabling real-time visualization of multiple camera feeds, annotated detections, DINOV3 embeddings, and LiDAR/IMU streams.  
 
----
-
-## 🚀 Features
-
-- **ROS2 Integration**
-  - Publishes `sensor_msgs/Image` and `sensor_msgs/CameraInfo` for each camera.
-  - QoS profiles optimized for robotics (BEST_EFFORT for images, RELIABLE for camera info).
-  - Compatible with `rqt_image_view`, `rviz2`, and downstream perception stacks.
-
-- **Multi-Camera Support**
-  - Dynamically configure multiple cameras via `cameras.yaml`.
-  - Auto-discovers namespaces and generates per-camera topics (`/cameras/<name>/image_raw`, `/cameras/<name>/camera_info`).
-
-- **GStreamer Appsink Pipelines**
-  - Direct GStreamer pipelines for both **Aravis GigE Vision** (`aravissrc`) and **RTSP/H.264** (`rtspsrc`) inputs.
-  - Hardware acceleration (`nvh264dec` for NVIDIA GPUs) or software decode (`avdec_h264`).
-  - Configurable caps (resolution, framerate, pixel format).
-
-- **Low-Latency Design**
-  - Uses `appsink` with `drop=true sync=false max-buffers=1` for real-time processing.
-  - Frame grabbing and publishing done in dedicated threads (`AppsinkWorker`, `CameraWorker`) for scalability.
-
-- **Containerized Deployment**
-  - Fully Dockerized with `docker-compose.yml` orchestrating the build and runtime environment.
-  - Scripts (`build.sh`, `run.sh`, `down.sh`, `container.sh`) simplify lifecycle management.
-
-- **Diagnostics**
-  - Periodic logging of frame size, format, and publishing rate.
-  - Supports debug overlays (via GStreamer caps negotiation and `videoconvert`).
+Both modules are fully containerized with Docker support and designed for reproducibility on GPU-enabled robotics platforms.
 
 ---
 
-## 📂 Repository Structure
+## ?? Modules
 
-```
-├── AppsinkWorker.py        # GStreamer appsink thread for ROS2 publishing
-├── multicam_node.py        # Main ROS2 node for multi-camera handling
-├── package.xml             # ROS2 package manifest
-├── build.sh                # Builds the container and UI
-├── run.sh                  # Launches docker-compose up
-├── down.sh                 # Shuts down containers
-├── container.sh            # Launches container with UID/GID mapping
-├── container_ui.py         # Containerized UI entrypoint
-├── docker-compose.yml      # Docker services configuration
-```
+### [SICK PICOcam2 ROS2 Bridge](catkin_ws/src/sick_picocam2_bridge/Readme.md)
+- ROS2 bridge for **SICK PICOcam2 GigE Vision** cameras.  
+- Publishes `sensor_msgs/Image` and `sensor_msgs/CameraInfo`.  
+- Supports GStreamer/Aravis pipelines with NVIDIA NVDEC hardware acceleration.  
+- Optimized for PTP synchronization and low-latency multi-camera streaming.
+
+---
+
+### [Camera View Dashboard (`camera_view`)](catkin_ws/src/camera_view/Readme.md)
+- **Web UI** for monitoring camera feeds, detections, embeddings, and LiDAR.  
+- FastAPI backend with WebSocket live streaming.  
+- Interactive **Three.js/WebGPU point cloud viewer** for LiDAR + IMU orientation.  
+- Tabbed interface for raw/annotated streams, detections, embeddings, stats, and camera management.  
+
+---
+
+## ??? Architecture
 
 ```mermaid
-flowchart LR
+flowchart TD
     subgraph Cameras
-        CAM1["Camera 1 (SICK I2D303C)"]
-        CAM2["Camera 2 (SICK I2D303C)"]
+        C1["PICOcam2 (ROS2 Bridge)"]
+        C2["Other RTSP/GigE Sources"]
     end
 
-    CAM1 --> GST1["GStreamer Pipeline<br/>aravissrc → videoconvert → appsink"]
-    CAM2 --> GST2["GStreamer Pipeline<br/>aravissrc → videoconvert → appsink"]
+    C1 --> BRIDGE["SICK PICOcam2 Bridge"]
+    C2 --> BRIDGE
+    BRIDGE -->|Publishes /cameras/*/image_raw| ROS2["ROS2 Topics"]
 
-    GST1 --> W1["AppsinkWorker<br/>(Threaded Worker)"]
-    GST2 --> W2["AppsinkWorker<br/>(Threaded Worker)"]
+    subgraph ROS2
+        ROS2IMG["/cameras/*/image_raw"]
+        ROS2ANN["/warehouse/annotated/*"]
+        ROS2DET["/warehouse/detections/*"]
+        ROS2EMB["/warehouse/embeddings/*"]
+        ROS2LIDAR["/lidar_points"]
+        ROS2IMU["/lidar_imu"]
+    end
 
-    W1 --> NODE["ROS2 MultiRtspCamNode"]
-    W2 --> NODE
+    ROS2 --> VIEW["Camera View Dashboard (FastAPI + Three.js)"]
 
-    NODE -->|Publishes| IMG["/cameras/*/image_raw<br/>(sensor_msgs/Image)"]
-    NODE -->|Publishes| INFO["/cameras/*/camera_info<br/>(sensor_msgs/CameraInfo)"]
-
-    style CAM1 fill:#f9f,stroke:#333,stroke-width:1px
-    style CAM2 fill:#f9f,stroke:#333,stroke-width:1px
-    style GST1 fill:#bbf,stroke:#333,stroke-width:1px
-    style GST2 fill:#bbf,stroke:#333,stroke-width:1px
-    style W1 fill:#bfb,stroke:#333,stroke-width:1px
-    style W2 fill:#bfb,stroke:#333,stroke-width:1px
-    style NODE fill:#ff9,stroke:#333,stroke-width:1px
-    style IMG fill:#afa,stroke:#333,stroke-width:1px
-    style INFO fill:#afa,stroke:#333,stroke-width:1px
-
+    style BRIDGE fill:#ff9,stroke:#333,stroke-width:1px
+    style VIEW fill:#bbf,stroke:#333,stroke-width:1px
 ```
+
 ---
 
-## 🔧 Installation
+## ?? Installation
 
 ### Dependencies
+- Ubuntu 22.04+
+- ROS2 Humble+
+- GStreamer + plugins (`good`, `bad`, `ugly`, `libav`)
+- Python 3.10+ with:
+  - `fastapi`, `uvicorn`, `opencv-python`, `numpy`, `transforms3d`
 
-- **System**
-  - Ubuntu 22.04+
-  - GStreamer 1.0 + plugins (`gstreamer1.0-plugins-good/bad/ugly`, `gstreamer1.0-libav`)
-  - [Aravis](https://github.com/AravisProject/aravis) for GigE Vision
-  - NVIDIA drivers + CUDA (optional for GPU decode)
-
-- **ROS2**
-  - `rclpy`, `sensor_msgs`, `std_msgs`, `vision_msgs`
-  - `image_transport`, `camera_info_manager`
-
-- **Python**
-  - `gi` (PyGObject for GStreamer)
-  - `cv2` (OpenCV with GStreamer support)
-  - `numpy`
-
-### Build & Run
-
+### Build
 ```bash
-# Build Docker environment
-./build.sh
-
-# Launch containers
-./run.sh
-
-# Shut down
-./down.sh
+cd ~/multicamera_ros2/catkin_ws
+colcon build
+source install/setup.bash
 ```
 
 ---
 
-## ⚙️ Usage
+## ?? Usage
 
-### Configure Cameras
-Update your ROS2 parameter file (`cameras.yaml`) with camera URIs:
+- Launch **PICOcam2 ROS2 Bridge**:
+  ```bash
+  ros2 run sick_picocam2_bridge multicam_node --ros-args --params-file config/cameras.yaml
+  ```
 
-```yaml
-streams:
-  - "aravis:SICK-I2D303C-2RCA11-0025310004"
-  - "aravis:SICK-I2D303C-2RCA11-0025310021"
-topic_prefix: "/cameras"
-width: 1280
-height: 720
-fps: 30
-hardware_accel: "nvidia"   # or leave blank for CPU
+- Launch **Camera View Dashboard**:
+  ```bash
+  ros2 run camera_view camera_view
+  ```
+
+Then open:
 ```
-
-### Run Node
-
-```bash
-ros2 run sick_picocam2_bridge multicam_node --ros-args --params-file config/cameras.yaml
+https://<host>:1080/
 ```
 
 ---
 
-## 📡 Published Topics
+## ?? Docker Support
 
-For each camera:
-- `/cameras/<camera_name>/image_raw` (`sensor_msgs/Image`)
-- `/cameras/<camera_name>/camera_info` (`sensor_msgs/CameraInfo`)
-
-Encodings supported:
-- `bgr8`, `rgb8`, `mono8`, `mono16`.
+Both modules provide Dockerfiles and compose services.  
+See individual module READMEs for details:  
+- [PICOcam2 Bridge README](catkin_ws/src/sick_picocam2_bridge/Readme.md)  
+- [Camera View README](catkin_ws/src/camera_view/Readme.md)  
 
 ---
 
-## 🧪 Validation
+## ?? Monitoring
 
-- **Throughput**: Tested on 1 Gbps NICs with jumbo frames (MTU=9000). Sustains multiple 720p/1080p streams simultaneously.  
-- **Latency**: <20ms end-to-end from camera to ROS2 topic on GPU decode.  
-- **QoS Compatibility**: Configurable per topic; default is robotics-friendly.
+- ROS2 logs for camera pipelines.  
+- Web UI (FastAPI + WebSocket) for dashboard monitoring.  
+- LiDAR visualization with live IMU and packet loss stats.  
 
 ---
 
-## 📚 Citation
+## ?? Citation
 
 If you use this work in your research, please cite:
 
 ```
-@software{rice2025sickpicocam2bridge,
+@software{rice2025multicamera,
   author       = {Sean Rice},
-  title        = {SICK PICOcam2 ROS2 Bridge},
+  title        = {Multi-Camera ROS2 Ecosystem},
   year         = {2025},
   institution  = {University of Michigan},
   email        = {seanrice@umich.edu},
   license      = {MIT}
 }
-```
-
----
-
-## 📝 Notes for Researchers
-
-- This project demonstrates how **GigE Vision cameras** can be integrated into **ROS2 ecosystems** with minimal latency by leveraging **GStreamer pipelines** and **direct ROS2 message publishing**.  
-- The repository can serve as a baseline for future robotics vision pipelines requiring:
-  - High-bandwidth image ingestion
-  - Multi-camera synchronization
-  - Real-time perception workloads on **edge GPUs**.
-
-## Architecture
-
-
-```mermaid
-flowchart LR
-    A[Camera Hardware] --> B[GStreamer Pipeline]
-    B --> C[AppsinkWorker]
-    C --> D[ROS2 Image Publisher]
-    D --> E[ROS2 Topics: /cameras/*/image_raw, /cameras/*/camera_info]
 ```
