@@ -24,7 +24,7 @@
 ![Maintained](https://img.shields.io/badge/Maintained-Yes-success)  
 
 **Author/Maintainer:** Sean Rice ([seanrice@umich.edu](mailto:seanrice@umich.edu))  
-**License:** Creative Commons Attribution–NonCommercial 4.0 International (CC BY-NC 4.0)  
+**License:** Creative Commons Attributionï¿½NonCommercial 4.0 International (CC BY-NC 4.0)  
 **Version:** 0.1.0  
 
 This package provides a **web-based monitoring dashboard** for multi-camera and LiDAR ROS2 streams. It combines **FastAPI**, **WebSockets**, and **Three.js** for live visualization of camera feeds, annotated detections, DINOV3 embeddings, and LiDAR point clouds with IMU orientation.
@@ -34,7 +34,7 @@ This package provides a **web-based monitoring dashboard** for multi-camera and 
 ## ?? Features
 
 - **Multi-Camera Integration**
-  - Subscribes to `/cameras/*/image_raw` and `/warehouse/annotated/*`.
+  - Subscribes to `/cameras/*/image_raw` and `/cameras/*/annotated`.
   - Displays both **raw** and **annotated** feeds in a responsive grid UI.
   - Supports fullscreen mode per camera.
 
@@ -74,9 +74,9 @@ camera_view/
 flowchart LR
     subgraph ROS2
         IMG[/cameras/*/image_raw/]
-        ANN[/warehouse/annotated/*/]
-        DET[/warehouse/detections/*/]
-        EMB[/warehouse/embeddings/*/]
+        ANN[/cameras/*/annotated]
+        DET[/cameras/*/detections]
+        EMB[/cameras/*/embeddings]
         LIDAR[/lidar_points/]
         IMU[/lidar_imu/]
     end
@@ -149,13 +149,13 @@ https://<host>:1080/
 ```
 
 Tabs available:
-- **Raw** – Live camera feeds
-- **Annotated** – Processed feeds with detections
-- **Detections** – Class + confidence list
-- **Embeddings** – DINOV3 JSON payloads
-- **Stats** – Session stats, playback, and charts
-- **LiDAR** – Interactive 3D point cloud + IMU
-- **Cameras** – Manage and rename cameras
+- **Raw** ï¿½ Live camera feeds
+- **Annotated** ï¿½ Processed feeds with detections
+- **Detections** ï¿½ Class + confidence list
+- **Embeddings** ï¿½ DINOV3 JSON payloads
+- **Stats** ï¿½ Session stats, playback, and charts
+- **LiDAR** ï¿½ Interactive 3D point cloud + IMU
+- **Cameras** ï¿½ Manage and rename cameras
 
 ---
 
@@ -163,8 +163,8 @@ Tabs available:
 
 ### Subscribed Topics
 - `/cameras/<id>/image_raw` (`sensor_msgs/Image`)
-- `/warehouse/annotated/<id>` (`sensor_msgs/Image`)
-- `/warehouse/embeddings/<id>` (`std_msgs/String`)
+- `/cameras/<id>/annotated` (`sensor_msgs/Image`)
+- `/cameras/<id>/embeddings` (`std_msgs/String`)
 - `/lidar_points` (`sensor_msgs/PointCloud2`)
 - `/lidar_imu` (`sensor_msgs/Imu`)
 - `/lidar_packets_loss` (`std_msgs/Int32`)

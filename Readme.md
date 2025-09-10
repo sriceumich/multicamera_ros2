@@ -24,13 +24,13 @@
 ![Maintained](https://img.shields.io/badge/Maintained-Yes-success)
 
 **Author/Maintainer:** Sean Rice ([seanrice@umich.edu](mailto:seanrice@umich.edu))  
-**License:** Creative Commons Attribution–NonCommercial 4.0 International (CC BY-NC 4.0)  
+**License:** Creative Commons Attributionï¿½NonCommercial 4.0 International (CC BY-NC 4.0)  
 **Version:** 0.1.0
 
 This repository provides a **modular multi-camera + LiDAR ROS2 ecosystem**, designed for **low-latency, high-throughput robotics applications**. It includes:
 
-- **SICK PICOcam2 ROS2 Bridge** — a GStreamer/Aravis-powered ROS2 bridge for GigE Vision cameras.  
-- **Camera View Dashboard (`camera_view`)** — a FastAPI + WebSocket + Three.js UI for live camera/LiDAR/IMU visualization.
+- **SICK PICOcam2 ROS2 Bridge** ï¿½ a GStreamer/Aravis-powered ROS2 bridge for GigE Vision cameras.  
+- **Camera View Dashboard (`camera_view`)** ï¿½ a FastAPI + WebSocket + Three.js UI for live camera/LiDAR/IMU visualization.
 
 Both modules are container-friendly and tuned for GPU acceleration.
 
@@ -70,8 +70,8 @@ flowchart TD
 
     subgraph ROS2
         ROS2IMG["/cameras/*/image_raw"]
-        ROS2ANN["/warehouse/annotated/*"]
-        ROS2EMB["/warehouse/embeddings/*"]
+        ROS2ANN["/cameras/*/annotated"]
+        ROS2EMB["/cameras/*/embeddings"]
         ROS2LIDAR["/lidar_points"]
         ROS2IMU["/lidar_imu"]
         ROS2LOSS["/lidar_packets_loss"]
@@ -151,10 +151,10 @@ docker compose up base
 docker compose up camera_view
 ```
 > Notes  
-> • The `base` service builds the ROS/driver image and exposes a healthcheck so `camera_view` waits until ROS is up.  
-> • `user: "${UID}:${GID}"` preserves host file perms inside containers.  
-> • `RECORD_ROOT` is bound to `./data/recordings` on the host.  
-> • The TLS key is overridden via a bind mount; the packaged cert/key are used otherwise.
+> ï¿½ The `base` service builds the ROS/driver image and exposes a healthcheck so `camera_view` waits until ROS is up.  
+> ï¿½ `user: "${UID}:${GID}"` preserves host file perms inside containers.  
+> ï¿½ `RECORD_ROOT` is bound to `./data/recordings` on the host.  
+> ï¿½ The TLS key is overridden via a bind mount; the packaged cert/key are used otherwise.
 
 ---
 

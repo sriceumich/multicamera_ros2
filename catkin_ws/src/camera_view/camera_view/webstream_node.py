@@ -214,10 +214,10 @@ class WebStreamNode(Node):
         for name, types in self.get_topic_names_and_types():
             if name.startswith("/cameras/") and name.endswith("/image_raw") and "sensor_msgs/msg/Image" in types:
                 topics["raw"].append(name)
-            if name.startswith("/warehouse/annotated/") and "sensor_msgs/msg/Image" in types:
+            if name.startswith("/cameras/") and name.endswith("/annotated") and "sensor_msgs/msg/Image" in types:
                 topics["annotated"].append(name)
             #  DINOV3 embeddings (String JSON)
-            if name.startswith("/warehouse/embeddings/") and "std_msgs/msg/String" in types:
+            if name.startswith("/cameras/") and name.endswith("/embeddings") and "std_msgs/msg/String" in types:
                 topics["embeddings"].append(name)
 
         return topics
@@ -304,17 +304,12 @@ class WebStreamNode(Node):
             
     # ---- cam_id parsing ----
     def _cam_id_from_topic(self, topic: str) -> str:
-        if topic.startswith("/cameras/") and topic.endswith("/image_raw"):
-            return topic.split("/")[-2]
-        for prefix in (
-            "/warehouse/annotated/",
-            "/warehouse/detections/",
-            "/warehouse/embeddings/",
-        ):
-            if topic.startswith(prefix):
-                return topic.split("/")[-1]
+        parts = topic.split("/")
+        if len(parts) >= 3 and parts[1] == "cameras":
+            return parts[2]  # /cameras/{cam_id}/{suffix}
         return topic.split("/")[-1]
-        
+
+          
     # ---- Callbacks ----
     def _handle_frame(self, msg: Image, stream_type: str, cam_id: str):
         try:
