@@ -279,7 +279,8 @@ RUN chown -R ubuntu:ubuntu /home/ubuntu/.cache
 # 2) Make sure Python prefers /usr/local first
 ENV PYTHONPATH=/home/ubuntu/catkin_ws/install/lib/python3.12/site-packages:\$PYTHONPATH
 ENV PYTHONNOUSERSITE=1 
-RUN pip install -r src/sick_picocam2_bridge/sick_picocam2_bridge/requirements.txt --force-reinstall --ignore-installed  --target /home/ubuntu/catkin_ws/install/lib/python3.12/site-packages
+RUN pip install -r src/sick_picocam2_bridge/requirements.txt --force-reinstall --ignore-installed  --target /home/ubuntu/catkin_ws/install/lib/python3.12/site-packages
+RUN pip install -r src/camera_view/requirements.txt --force-reinstall --ignore-installed  --target /home/ubuntu/catkin_ws/install/lib/python3.12/site-packages
 
 RUN source /opt/ros/kilted/setup.bash && \
              colcon build --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo \
