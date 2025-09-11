@@ -49,7 +49,7 @@ services:
 
   camera_view:
     <<: *ros_common
-    image: wildlife-camera
+    image: ros_base24
     container_name: camera_view
     gpus: all
     depends_on:
