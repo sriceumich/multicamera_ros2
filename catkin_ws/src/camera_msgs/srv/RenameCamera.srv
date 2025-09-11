@@ -1,0 +1,5 @@
+string current_id   # the RTSP s= name or current friendly name
+string new_name     # new friendly name (e.g., "barn_cam")
+---
+bool success
+string message
